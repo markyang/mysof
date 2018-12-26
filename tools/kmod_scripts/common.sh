@@ -102,7 +102,7 @@ Get codec module name, which is used for probing the codec module.
   If error occurs or no codec matches, returns "snd_sof_nocodec".
 !
 function get_codec_module(){
-    local codec_module=`read_codec_module`
+    codec_module=`read_codec_module`
     if [ 0 -eq $? ]; then
         echo $codec_module
     else
