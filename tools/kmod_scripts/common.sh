@@ -72,12 +72,12 @@ Read the codec module name, which is used for probing the codec module.
 !
 function read_codec_module(){
     assert_super_user
-    readonly comps=/sys/kernel/debug/asoc/components
+    local readonly comps=/sys/kernel/debug/asoc/components
     if [ ! -r $comps ]; then
         echo "cannot read \"$comps\"!"
         return 2
     fi
-    readonly conf=codec_map.conf
+    local readonly conf=codec_map.conf
     if [ ! -e $conf ]; then
         echo "\"$conf\" not exit!"
         return 2

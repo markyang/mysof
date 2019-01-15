@@ -1,8 +1,11 @@
 #!/bin/bash
+
+cd `dirname $0`
 . common.sh
 
 # The timeout value(seconds) waiting for aplay is ready.
-TIMEOUT_WAIT_APLAY=20
+readonly TIMEOUT_WAIT_APLAY=30
+readonly LOG_DIR=logs
 
 :<<'!'
 Waiting for aplay is ready based on the timeout value(seconds).
@@ -30,21 +33,30 @@ function run_loop(){
     local platform=`get_platform`
     local codec_module=`get_codec_module`
 
+    if [ -d $LOG_DIR ]; then
+        [ -d ${LOG_DIR}-last ] && rm -rvf ${LOG_DIR}-last
+        mv $LOG_DIR ${LOG_DIR}-last
+    fi
+    mkdir $LOG_DIR
+
     while [ $counter -lt $max_loop ]; do
+        echo "-- test $counter of $max_loop --"
         wait_aplay_ready $TIMEOUT_WAIT_APLAY
         if [ 0 -eq $? ]; then
             echo "aplay is not ready!"
             break
         fi
-        echo "test $counter"
         ./sof_bootone.sh $platform $codec_module $ignore_error
         if [ 0 -ne $? ]; then
             echo "fail to boot firmware!"
             break
+        else
+            dmesg > $LOG_DIR/boot_${counter}_pass.log
         fi
-        dmesg > boot_$counter.bootlog
+
         let counter+=1
     done
+
     echo "==== boot firmware: $counter times ===="
 }
 
@@ -56,8 +68,8 @@ function main(){
     assert_super_user
 
     until [ 1 -eq $valid ]; do
-        read -p "Enter the loop times(default 5):" max_loop
-        max_loop=${max_loop:-5}
+        read -p "Enter the loop times(default 100):" max_loop
+        max_loop=${max_loop:-100}
         if [ -z `grep '^[[:digit:]]*$' <<< $max_loop` ]; then
             echo "Invalid number: $max_loop"
             valid=0

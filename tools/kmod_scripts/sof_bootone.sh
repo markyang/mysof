@@ -1,5 +1,9 @@
 #!/bin/bash
+
+cd `dirname $0`
 . common.sh
+
+readonly LOG_DIR=logs
 
 function show_help() {
     echo -e "Usage: $0 [platform] [codec_module] [ignore_error]\n"\
@@ -38,6 +42,7 @@ function run_boot(){
     ignore_error=$?
 
     dmesg -C
+
     ./sof_remove.sh
     ./sof_insert.sh $platform $codec_module
     sleep 1
@@ -48,8 +53,10 @@ function run_boot(){
     if [ 0 -eq $ignore_error ]; then
         error=$(dmesg | grep sof-audio | grep -v "DSP trace buffer overflow" | grep "error")
     fi
+
     if [ ! -z "$error" ] || [ -z "$fw_boot" ] || [ ! -z "$timeout" ]; then
-        dmesg > boot_fail.log
+        [ ! -d $LOG_DIR ] && mkdir $LOG_DIR
+        dmesg > $LOG_DIR/boot_fail.log
         echo "boot failed, see boot_fail.log for details"
         exit 2
     else
