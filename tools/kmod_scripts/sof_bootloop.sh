@@ -4,7 +4,7 @@ cd `dirname $0`
 . common.sh
 
 # The timeout value(seconds) waiting for aplay is ready.
-readonly TIMEOUT_WAIT_APLAY=30
+readonly TIMEOUT_WAIT_APLAY=20
 readonly LOG_DIR=logs
 
 :<<'!'
@@ -21,7 +21,6 @@ function wait_aplay_ready(){
         [ 1 -eq $ready ] && return $ready
         sleep 1
         let elapsed_sec+=1
-        #echo "try $elapsed_sec"
     done
     return 0
 }
@@ -67,33 +66,44 @@ function main(){
 
     assert_super_user
 
-    until [ 1 -eq $valid ]; do
-        read -p "Enter the loop times(default 100):" max_loop
-        max_loop=${max_loop:-100}
-        if [ -z `grep '^[[:digit:]]*$' <<< $max_loop` ]; then
-            echo "Invalid number: $max_loop"
-            valid=0
-        else
-            valid=1
-        fi
-    done
+    if [ $# -eq 0 ]; then
+        until [ 1 -eq $valid ]; do
+            read -p "Enter the loop times(default 100):" max_loop
+            max_loop=${max_loop:-100}
+            if [ -z `grep '^[[:digit:]]*$' <<< $max_loop` ]; then
+                echo "Invalid number: $max_loop"
+                valid=0
+            else
+                valid=1
+            fi
+        done
+    else
+        max_loop=$1
+    fi
     echo "The loop times: $max_loop"
 
-    valid=0
-    until [ 1 -eq $valid ]; do
-        read -p "Ignore errors in dmesg(yes/no)(default yes):" ignore_error
-        ignore_error=${ignore_error:-"yes"}
-        check_bool $ignore_error
-        valid=$?
-        [ 0 -eq $valid ] && echo "Invalid boolean value: $ignore_error,"\
-          "must be one of the following values: true, false, yes, no, y, n, 1, 0."
-    done
+    if [ $# -lt 2 ]; then
+        valid=0
+        until [ 1 -eq $valid ]; do
+            read -p "Ignore errors in dmesg(yes/no)(default yes):" ignore_error
+            ignore_error=${ignore_error:-"yes"}
+            check_bool $ignore_error
+            valid=$?
+            [ 0 -eq $valid ] && echo "Invalid boolean value: $ignore_error,"\
+              "must be one of the following values: true, false, yes, no, y, n, 1, 0."
+        done
+    else
+        ignore_error=$2
+    fi
     echo "Ignore errors: $ignore_error"
 
     get_bool "$ignore_error"
     ignore_error=$?
 
+    pkill aplay
+    pkill arecord
+
     run_loop $max_loop $ignore_error
 }
 
-main
+main $@

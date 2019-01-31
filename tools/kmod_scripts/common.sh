@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# differentiate the OS error code(0~131)
-CODEC_NOT_FOUND=132
-
 :<<'!'
 Make sure the current user is a super user.
 !
@@ -69,15 +66,16 @@ function get_platform(){
 
 :<<'!'
 Read the codec module name, which is used for probing the codec module.
+  @conf($1): the configuration file.
 !
 function read_codec_module(){
     assert_super_user
     local readonly comps=/sys/kernel/debug/asoc/components
+    local conf=${1:-codec_map.conf}
     if [ ! -r $comps ]; then
         echo "cannot read \"$comps\"!"
         return 2
     fi
-    local readonly conf=codec_map.conf
     if [ ! -e $conf ]; then
         echo "\"$conf\" not exit!"
         return 2
@@ -93,8 +91,8 @@ function read_codec_module(){
             fi
         fi
     done
-    # codec module is not found.
-    return $CODEC_NOT_FOUND
+    # module is not found.
+    return 132
 }
 
 :<<'!'
