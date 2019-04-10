@@ -1,4 +1,5 @@
 #!/bin/bash
+
 function remove_module() {
     local module="$1"
     if lsmod | grep "$module" &> /dev/null ; then
@@ -12,13 +13,13 @@ function remove_module() {
 function unload_modules() {
     remove_module sof_pci_dev
     remove_module sof_acpi_dev
-    remove_module snd_soc_acpi_intel_match
     remove_module snd_sof_intel_byt
     remove_module snd_sof_intel_hsw
     remove_module snd_sof_intel_bdw
     remove_module snd_sof_intel_hda_common
     remove_module snd_sof_intel_hda
     remove_module snd_sof_xtensa_dsp
+    remove_module snd_soc_acpi_intel_match
 
     remove_module snd_soc_sst_bytcr_rt5640
     remove_module snd_soc_sst_bytcr_rt5651
@@ -28,8 +29,8 @@ function unload_modules() {
     remove_module snd_soc_sst_bxt_pcm512x
     remove_module snd_soc_sst_bxt_tdf8532
     remove_module snd_soc_cnl_rt274
-    remove_module snd_sof_nocodec
     remove_module snd_sof
+    remove_module snd_sof_nocodec
 
     remove_module snd_soc_wm8804_i2c
     remove_module snd_soc_wm8804
