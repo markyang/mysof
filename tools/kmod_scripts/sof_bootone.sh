@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd `dirname $0`
-. common.sh
+SH_ROOT_DIR=`dirname $0`
+. $SH_ROOT_DIR/common.sh
 
-readonly LOG_DIR=logs
+LOG_DIR=logs
 
 function show_help() {
     echo -e "Usage: $0 [platform] [codec_module] [ignore_error]\n"\
@@ -12,7 +12,16 @@ function show_help() {
     exit 1
 }
 
+function log_error() {
+    local func_name=${1:-"sof_insert"}
+    [ ! -d $LOG_DIR ] && mkdir $LOG_DIR
+    dmesg > $LOG_DIR/boot_fail.log
+    echo "$func_name failed, see $LOG_DIR/boot_fail.log for details"
+    exit 1
+}
+
 function run_boot(){
+    local logdir
     local platform
     local codec_module
     local fw_boot
@@ -43,8 +52,14 @@ function run_boot(){
 
     dmesg -C
 
-    ./sof_remove.sh
-    ./sof_insert.sh $platform $codec_module
+    $SH_ROOT_DIR/sof_remove.sh
+
+    if [ 0 -eq $ignore_error ]; then
+        error=$(dmesg | grep sof-audio | grep -v "DSP trace buffer overflow" | grep "error")
+        [ ! -z "$error" ] && log_error "sof_remove"
+    fi
+
+    $SH_ROOT_DIR/sof_insert.sh $platform $codec_module
     sleep 1
 
     fw_boot=$(dmesg | grep sof-audio | grep "boot complete")
@@ -55,10 +70,7 @@ function run_boot(){
     fi
 
     if [ ! -z "$error" ] || [ -z "$fw_boot" ] || [ ! -z "$timeout" ]; then
-        [ ! -d $LOG_DIR ] && mkdir $LOG_DIR
-        dmesg > $LOG_DIR/boot_fail.log
-        echo "boot failed, see boot_fail.log for details"
-        exit 2
+        log_error "sof_insert"
     else
         echo "boot success"
     fi
